@@ -1,14 +1,14 @@
-# [Working Title] (visitor-gate-pass)
+# [Untitled App] (visitor-gate-pass)
 
 ## Project Overview
 
 ### Statement of the Problem
 
-Filinvest security staff currently lack a reliable system to track visitor entry. Without proper monitoring, guests can potentially access restricted zones, creating blind spots and compromising the building's security.
+Solinea security staff currently lack a reliable system to track visitor entry. Without proper monitoring, guests can potentially access restricted zones, creating blind spots and compromising the building's security.
 
 ### Proposed Solution
 
-Our proposed solution is a digital visitor gate-pass system. Admins grant building access to a visitor, who then receives a unique code. The Filinvest staff then scans the code at the entrance to verify the pass and view the visitor's details, including purpose of visit, ID credentials, phone number, and the admin who authorized them. Once the pass expires, sensitive user information is permanently deleted. Only a minimal log is kept for accountability.
+Our proposed solution is a digital visitor gate-pass system. Hosts grant building access to a visitor, who then receives a unique code. The Solinea staff then scans the code at the entrance to verify the pass and view the visitor's details, including purpose of visit, ID credentials, phone number, and the admin who authorized them. Once the pass expires, sensitive user information is permanently deleted. Only a minimal log is kept for accountability.
 
 ### Project Goal
 
@@ -42,15 +42,15 @@ Develop a visitor gate pass system that provides security and administrators wit
 
 ### Business Process Flowchart
 
-![Business Process Flow Chart](./assets/images/visitor-gate-pass-business-process-flowchart.png)
+![Business Process Flow Chart](../public/visitor-gate-pass-business-process-flowchart.png)
 
 ### Entity Relationship Diagram
 
-![Entity Relationship Diagram](./assets/images/visitor-gate-pass-erd.png)
+![Entity Relationship Diagram](../public/visitor-gate-pass-erd.png)
 
 ### System Architecture
 
-![Entity Relationship Diagram](./assets/images/visitor-gate-pass-architecture-overview.png)
+![Architecture Overview Diagram](../public/visitor-gate-pass-architecture-overview.png)
 
 ## Project Members and Roles
 
