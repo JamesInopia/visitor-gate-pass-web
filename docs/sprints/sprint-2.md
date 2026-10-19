@@ -12,7 +12,7 @@
 
 |                 |                                                 |
 | --------------- | ----------------------------------------------- |
-| **Start Date**  | 10/19/2026                                      |
+| **Start Date**  | 10/12/2026                                      |
 | **App Name**    | Pass-Abot                                       |
 | **Sprint Lead** | James Angelo Inopia                             |
 | **Demo by**     | James Angelo Inopia                             |
