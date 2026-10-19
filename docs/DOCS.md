@@ -1,4 +1,4 @@
-# [Untitled App] (visitor-gate-pass)
+# Pass-Abot (visitor-gate-pass)
 
 ## Project Overview
 
@@ -31,26 +31,26 @@ Develop a visitor gate pass system that provides security and administrators wit
 
 ### User Requirements
 
-| User      | Requirement                                                                                                                                                                                                                                              |
-| --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| All Users | • Must sign in with their own account.<br>• Should only see data relevant to their role.                                                                                                                                                                 |
-| Visitor   | • Can request a gatepass without needing to know anything beyond the tenant's room number and full name.<br>• Can see whether the request is pending, approved or denied.<br>• Can show a gatepass code on their phone at the entrance.                  |
-| Tenant    | • Gets notified when someone requests to visit them.<br>• Can see the visitor's name, purpose of visit and contact details before deciding.<br>• Can choose the pass duration, with 24 hours as the default.<br>• Can cancel a pass before it expires.   |
-| Admin     | • Can quickly validate a code and tell whether it is active, expired or revoked.<br>• Can view the visitor's ID image only while the gatepass is valid.<br>• Can record when a visitor enters and leaves.<br>• Can search recent visits and the archive. |
+| User      | Requirement                                                                                                                                                                                                                                              | Accessible Pages  |
+| --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- |
+| All Users | • Must sign in with their own account.<br>• Should only see data relevant to their role.                                                                                                                                                                 | • Home            |
+| Visitor   | • Can request a gatepass without needing to know anything beyond the tenant's room number and full name.<br>• Can see whether the request is pending, approved or denied.<br>• Can show a gatepass code on their phone at the entrance.                  | • My Gatepass     |
+| Tenant    | • Gets notified when someone requests to visit them.<br>• Can see the visitor's name, purpose of visit and contact details before deciding.<br>• Can choose the pass duration, with 24 hours as the default.<br>• Can cancel a pass before it expires.   | • Manage Gatepass |
+| Admin     | • Can quickly validate a code and tell whether it is active, expired or revoked.<br>• Can view the visitor's ID image only while the gatepass is valid.<br>• Can record when a visitor enters and leaves.<br>• Can search recent visits and the archive. | • Scan Gatepass   |
 
 ## Technical Diagrams
 
 ### Business Process Flowchart
 
-![Business Process Flow Chart](../public/visitor-gate-pass-business-process-flowchart.png)
+![Business Process Flow Chart](../assets/images/visitor-gate-pass-business-process-flowchart.png)
 
 ### Entity Relationship Diagram
 
-![Entity Relationship Diagram](../public/visitor-gate-pass-erd.png)
+![Entity Relationship Diagram](../assets/images/visitor-gate-pass-erd.png)
 
 ### System Architecture
 
-![Architecture Overview Diagram](../public/visitor-gate-pass-architecture-overview.png)
+![Entity Relationship Diagram](../assets/images/visitor-gate-pass-architecture-overview.png)
 
 ## Project Members and Roles
 
