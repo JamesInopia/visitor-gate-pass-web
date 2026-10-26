@@ -7,6 +7,20 @@ import { removeIdImage } from "@/lib/storage";
 
 const host = alias(users, "host");
 
+export type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+export async function clearContactIfIdle(tx: Tx, visitorId: number) {
+  await tx
+    .update(users)
+    .set({ contact: null })
+    .where(
+      and(
+        eq(users.userId, visitorId),
+        sql`not exists (select 1 from ${visitorRequest} where ${visitorRequest.visitorId} = ${visitorId})`,
+      ),
+    );
+}
+
 export type Archive = typeof archives.$inferSelect;
 
 export async function purgeRequest(requestId: number) {
@@ -42,15 +56,7 @@ export async function purgeRequest(requestId: number) {
     }
 
     await tx.delete(visitorRequest).where(eq(visitorRequest.requestId, requestId));
-    await tx
-      .update(users)
-      .set({ contact: null })
-      .where(
-        and(
-          eq(users.userId, row.request.visitorId),
-          sql`not exists (select 1 from ${visitorRequest} where ${visitorRequest.visitorId} = ${row.request.visitorId})`,
-        ),
-      );
+    await clearContactIfIdle(tx, row.request.visitorId);
     return row.request.idImageUrl;
   });
   await removeIdImage(imagePath);

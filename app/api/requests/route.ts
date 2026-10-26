@@ -22,6 +22,7 @@ export async function POST(request: Request) {
   const parsed = NewRequestSchema.safeParse({
     hostName: form.get("hostName"),
     unitNo: form.get("unitNo"),
+    visitDate: form.get("visitDate"),
     purpose: form.get("purpose"),
     contact: form.get("contact"),
   });
@@ -32,6 +33,10 @@ export async function POST(request: Request) {
     return fail(400, "Attach a photo of your ID (JPEG, PNG, WebP or HEIC, up to 5 MB).");
 
   const result = await createRequest(profile, parsed.data, idImage);
-  if (!result.ok) return fail(result.reason === "duplicate" ? 409 : 404);
-  return NextResponse.json(result.request, { status: 201 });
+  if (result.ok) return NextResponse.json(result.request, { status: 201 });
+
+  const status = { no_tenant: 404, visit_date_passed: 400, visit_date_invalid: 400, has_active_pass: 409, duplicate: 409 }[
+    result.reason
+  ];
+  return fail(status, result.reason);
 }

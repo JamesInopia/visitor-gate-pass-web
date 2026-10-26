@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { bigint, check, index, pgTable, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
+import { bigint, check, date, index, pgTable, text, timestamp, unique, uniqueIndex, uuid } from "drizzle-orm/pg-core";
  
 export const ROLES = ["visitor", "tenant", "admin"] as const;
 export type Role = (typeof ROLES)[number];
@@ -28,12 +28,14 @@ export const visitorRequest = pgTable(
     visitDuration: timestamp("visitDuration", { withTimezone: true }),
     purposeOfVisit: text("purposeOfVisit"),
     idImageUrl: text("idImageUrl"),
-    status: text("status", { enum: ["pending", "approved", "rejected", "cancelled"] }).notNull().default("pending"),
+    status: text("status", { enum: ["pending", "approved", "denied", "cancelled"] }).notNull().default("pending"),
     requestedAt: timestamp("requestedAt", { withTimezone: true }).notNull().defaultNow(),
     respondedAt: timestamp("respondedAt", { withTimezone: true }),
+    visitDate: date("visitDate", { mode: "string" }),
   },
   (t) => [
-    check("visitor_request_status_check", sql`${t.status} in ('pending','approved','rejected','cancelled')`),
+    check("visitor_request_status_check", sql`${t.status} in ('pending','approved','denied','cancelled')`),
+    uniqueIndex("one_approved_per_visitor").on(t.visitorId).where(sql`${t.status} = 'approved'`),
     index("visitor_request_visitorId_idx").on(t.visitorId),
     index("visitor_request_hostId_idx").on(t.hostId),
   ],
@@ -82,3 +84,19 @@ export const archives = pgTable("archives", {
   authBy: text("authBy"),
   archivedAt: timestamp("archivedAt", { withTimezone: true }).notNull().defaultNow(),
 });
+
+export const notices = pgTable(
+  "notices",
+  {
+    noticeId: bigint("noticeId", { mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
+    userId: bigint("userId", { mode: "number" }).notNull().references(() => users.userId, { onDelete: "cascade" }),
+    kind: text("kind", { enum: ["denied"] }).notNull(),
+    hostName: text("hostName").notNull(),
+    visitDate: date("visitDate", { mode: "string" }),
+    createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    check("notices_kind_check", sql`${t.kind} = 'denied'`),
+    index("notices_user_idx").on(t.userId),
+  ],
+);
