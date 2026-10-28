@@ -40,17 +40,37 @@ Develop a visitor gate pass system that provides security and administrators wit
 
 ## Technical Diagrams
 
-### Business Process Flowchart
+### System Architecture
 
-![Business Process Flow Chart](../assets/images/visitor-gate-pass-business-process-flowchart.png)
+![Entity Relationship Diagram](../public/visitor-gate-pass-architecture-overview.png)
 
 ### Entity Relationship Diagram
 
-![Entity Relationship Diagram](../assets/images/visitor-gate-pass-erd.png)
+![Entity Relationship Diagram](../public/visitor-gate-pass-erd.png)
 
-### System Architecture
+### Business Process Flowchart (App)
 
-![Entity Relationship Diagram](../assets/images/visitor-gate-pass-architecture-overview.png)
+![Business Process Flow Chart - App](../public/visitor-gate-pass-process-flow-app.png)
+
+### Business Process Flowchart (Web)
+
+![Business Process Flow Chart - Web](../public/visitor-gate-pass-process-flow-web.png)
+
+### User Flow Diagram (App)
+
+![User Flow Diagram - App](../public/visitor-gate-pass-user-flow-diagram-app.png)
+
+### User Flow Diagram (Web)
+
+![User Flow Diagram - Web](../public/visitor-gate-pass-user-flow-diagram-web.png)
+
+### User Flow Diagram (App)
+
+![Data Flow Diagram - App](../public/visitor-gate-pass-data-flow-diagram-app.png)
+
+### User Flow Diagram (Web)
+
+![Data Flow Diagram - Web](../public/visitor-gate-pass-data-flow-diagram-web.png)
 
 ## Project Members and Roles
 
