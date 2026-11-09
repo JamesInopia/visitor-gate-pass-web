@@ -152,7 +152,7 @@ export async function createRequest(visitorProfile: Profile, input: CreateInput,
   }
 }
 
-export type AnswerFailure = { ok: false; reason: "not-found" | "already-answered" | "bad-window" };
+export type AnswerFailure = { ok: false; reason: "not-found" | "already-answered" | "bad-window" | "not-active" };
 
 async function pendingFor(
   tenant: Profile,
@@ -250,4 +250,35 @@ export async function removeRequest(visitorProfile: Profile, requestId: number):
   if (!row) return false;
   await purgeRequest(requestId);
   return true;
+}
+
+// Tenant ends an active pass early. The pass stays on record as expired.
+export async function expireRequest(
+  tenant: Profile,
+  requestId: number,
+): Promise<{ ok: true; request: RequestDto } | AnswerFailure> {
+  const [row] = await select().where(and(eq(visitorRequest.requestId, requestId), eq(visitorRequest.hostId, tenant.userId)));
+  if (!row) return { ok: false, reason: "not-found" };
+
+  const { request, pass } = row;
+  const now = new Date();
+  if (request.status !== "approved" || !pass) return { ok: false, reason: "not-active" };
+  const live = (pass.status === "active" || pass.status === "used") && pass.issuedAt <= now && expiresAtOf(pass) > now;
+  if (!live) return { ok: false, reason: "not-active" };
+
+  await db.update(gatePass).set({ expiryDate: now, status: "expired" }).where(eq(gatePass.passId, pass.passId));
+  const [updated] = await select().where(eq(visitorRequest.requestId, requestId));
+  return { ok: true, request: toDto(updated, tenant) };
+}
+
+// Tenant cancels an approved pass that has not started yet. The request is deleted, not kept.
+export async function cancelApprovedRequest(
+  tenant: Profile,
+  requestId: number,
+): Promise<"ok" | "not-found" | "started"> {
+  const [row] = await select().where(and(eq(visitorRequest.requestId, requestId), eq(visitorRequest.hostId, tenant.userId)));
+  if (!row || row.request.status !== "approved") return "not-found";
+  if (row.pass && row.pass.issuedAt <= new Date()) return "started";
+  await purgeRequest(requestId);
+  return "ok";
 }

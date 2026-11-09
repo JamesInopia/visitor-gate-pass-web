@@ -2,7 +2,14 @@ import { NextResponse } from "next/server";
 import { getProfile } from "@/lib/auth";
 import { RespondSchema } from "@/lib/definitions";
 import { fail, noContent, parseId } from "@/lib/http";
-import { approveRequest, denyRequest, readRequest, removeRequest } from "@/lib/requests";
+import {
+  approveRequest,
+  cancelApprovedRequest,
+  denyRequest,
+  expireRequest,
+  readRequest,
+  removeRequest,
+} from "@/lib/requests";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -27,7 +34,9 @@ export async function PATCH(request: Request, { params }: Ctx) {
   const result =
     parsed.data.decision === "approve"
       ? await approveRequest(profile, id, parsed.data.startsAt, parsed.data.expiresAt)
-      : await denyRequest(profile, id);
+      : parsed.data.decision === "expire"
+        ? await expireRequest(profile, id)
+        : await denyRequest(profile, id);
 
   if (result.ok) return "request" in result ? NextResponse.json(result.request) : noContent();
   if (result.reason === "not-found") return fail(404);
@@ -37,8 +46,14 @@ export async function PATCH(request: Request, { params }: Ctx) {
 export async function DELETE(request: Request, { params }: Ctx) {
   const profile = await getProfile(request);
   if (!profile) return fail(401);
-  if (profile.role !== "visitor") return fail(403);
+  if (profile.role !== "visitor" && profile.role !== "tenant") return fail(403);
   const id = parseId((await params).id);
   if (!id) return fail(404);
+
+  if (profile.role === "tenant") {
+    const outcome = await cancelApprovedRequest(profile, id);
+    if (outcome === "ok") return noContent();
+    return outcome === "started" ? fail(409, "already-started") : fail(404);
+  }
   return (await removeRequest(profile, id)) ? noContent() : fail(404);
 }

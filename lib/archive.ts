@@ -44,14 +44,19 @@ export async function purgeRequest(requestId: number) {
 
       if (logs.length > 0) {
         const exits = logs.flatMap((l) => (l.dateExit ? [l.dateExit.getTime()] : []));
-        await tx.insert(archives).values({
+        await tx
+          .insert(archives)
+          .values({
+          visitorId: row.request.visitorId,
+          passId: row.pass.passId,
           visitorName: row.visitor.name,
           unitVisited: row.host.unitNo,
           dateEnter: logs[0].dateEnter,
           dateExit: exits.length ? new Date(Math.max(...exits)) : null,
           visitPurpose: row.request.purposeOfVisit,
           authBy: logs[0].adminName,
-        });
+          })
+          .onConflictDoNothing({ target: archives.passId });
       }
     }
 

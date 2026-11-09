@@ -1,10 +1,10 @@
+import { NextResponse } from "next/server";
 import { getProfile } from "@/lib/auth";
-import { fail, noContent, parseId } from "@/lib/http";
-import { dismissNotice } from "@/lib/notices";
+import { fail } from "@/lib/http";
+import { readNotices } from "@/lib/notices";
 
-export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(request: Request) {
   const profile = await getProfile(request);
   if (!profile) return fail(401);
-  const id = parseId((await params).id);
-  return id && (await dismissNotice(profile.userId, id)) ? noContent() : fail(404);
+  return NextResponse.json(await readNotices(profile.userId));
 }

@@ -22,6 +22,7 @@ export const RespondSchema = z.discriminatedUnion(
       expiresAt: z.coerce.date({ error: "Enter a valid end time." }),
     }),
     z.object({ decision: z.literal("deny") }),
+    z.object({ decision: z.literal("expire") }),
   ],
-  { error: "Choose approve or deny." },
+  { error: "Choose approve, deny or expire." },
 );

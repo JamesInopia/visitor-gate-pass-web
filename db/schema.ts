@@ -69,21 +69,35 @@ export const entryLog = pgTable(
     dateEnter: timestamp("dateEnter", { withTimezone: true }),
     dateExit: timestamp("dateExit", { withTimezone: true }),
   },
-  (t) => [index("entry_log_passId_idx").on(t.passId), index("entry_log_adminId_idx").on(t.adminId)],
+  (t) => [
+    index("entry_log_passId_idx").on(t.passId),
+    index("entry_log_adminId_idx").on(t.adminId),
+    index("entry_log_dateenter_idx").on(t.dateEnter.desc()),
+    uniqueIndex("one_open_entry_per_pass").on(t.passId).where(sql`${t.dateExit} is null`),
+  ],
 );
 
 
-export const archives = pgTable("archives", {
-  logId: bigint("logId", { mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
-  visitorName: text("visitorName"),
-  contact: text("contact"),
-  unitVisited: text("unitVisited"),
-  dateEnter: timestamp("dateEnter", { withTimezone: true }),
-  dateExit: timestamp("dateExit", { withTimezone: true }),
-  visitPurpose: text("visitPurpose"),
-  authBy: text("authBy"),
-  archivedAt: timestamp("archivedAt", { withTimezone: true }).notNull().defaultNow(),
-});
+export const archives = pgTable(
+  "archives",
+  {
+    logId: bigint("logId", { mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
+    visitorName: text("visitorName"),
+    contact: text("contact"),
+    unitVisited: text("unitVisited"),
+    dateEnter: timestamp("dateEnter", { withTimezone: true }),
+    dateExit: timestamp("dateExit", { withTimezone: true }),
+    visitPurpose: text("visitPurpose"),
+    authBy: text("authBy"),
+    archivedAt: timestamp("archivedAt", { withTimezone: true }).notNull().defaultNow(),
+    visitorId: bigint("visitorId", { mode: "number" }).references(() => users.userId, { onDelete: "set null" }),
+    passId: bigint("passId", { mode: "number" }),
+  },
+  (t) => [
+    uniqueIndex("archives_passid_key").on(t.passId),
+    index("archives_visitor_idx").on(t.visitorId, t.dateEnter.desc()),
+  ],
+);
 
 export const notices = pgTable(
   "notices",
