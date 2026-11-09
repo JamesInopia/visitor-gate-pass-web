@@ -1,6 +1,12 @@
+import "./globals.css";
+
 export const metadata = { title: "Gatepass API" };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="en">
       <body>{children}</body>
