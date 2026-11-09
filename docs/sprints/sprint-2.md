@@ -25,7 +25,7 @@
 | Setting up of Supabase                        | James Angelo Inopia                      | Done                            |
 | Setting up of Pages and Page Navigation       | James Angelo Inopia                      | Done                            |
 | Implementation of Login and Role-based Access | James Angelo Inopia                      | Done                            |
-| Designing of UI/UX Mockups                    | Harvey Tyson Ablen<br>Noah Gabriel Lonoy | In progress [Moved to Sprint 2] |
+| Designing of UI/UX Mockups                    | Harvey Tyson Ablen<br>Noah Gabriel Lonoy | In progress [Moved to Sprint 3] |
 
 ## Product Owner Remarks
 

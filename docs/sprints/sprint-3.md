@@ -24,7 +24,7 @@
 | -------------------------- | ---------------------------------------- | ------------------------------- |
 | Visitor workflow           | James Angelo Inopia                      | Done                            |
 | Tenant workflow            | James Angelo Inopia                      | Done                            |
-| Designing of UI/UX Mockups | Harvey Tyson Ablen<br>Noah Gabriel Lonoy | In progress [Moved to Sprint 3] |
+| Designing of UI/UX Mockups | Harvey Tyson Ablen<br>Noah Gabriel Lonoy | In progress [Moved to Sprint 4] |
 
 ## Progress Blockers
 
