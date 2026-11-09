@@ -55,7 +55,7 @@ export async function getProfile(request?: Request): Promise<Profile | null> {
   return created ?? null;
 }
 
-export async function rquireAdmin(request: Request): Promise<Profile> {
+export async function requireAdmin(request: Request): Promise<Profile> {
   const profile = await getProfile(request);
   if (!profile) throw fail(401, "Unauthorized");
   if (profile.role !== "admin") throw fail(403, "Forbidden");
