@@ -114,3 +114,30 @@ export const notices = pgTable(
     index("notices_user_idx").on(t.userId),
   ],
 );
+
+export const TENANT_APPLICATION_STATUSES = ["pending", "approved", "rejected"] as const;
+export type TenantApplicationStatus = (typeof TENANT_APPLICATION_STATUSES)[number];
+
+// A visitor asking to become a tenant. An admin approves or rejects it.
+// Rows are kept after the decision so the visitor can see the outcome.
+export const tenantApplication = pgTable(
+  "tenant_application",
+  {
+    applicationId: bigint("applicationId", { mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
+    userId: bigint("userId", { mode: "number" }).notNull().references(() => users.userId, { onDelete: "cascade" }),
+    fullName: text("fullName").notNull(),
+    email: text("email").notNull(),
+    unitNo: text("unitNo").notNull(),
+    status: text("status", { enum: TENANT_APPLICATION_STATUSES }).notNull().default("pending"),
+    reviewNote: text("reviewNote"),
+    requestedAt: timestamp("requestedAt", { withTimezone: true }).notNull().defaultNow(),
+    respondedAt: timestamp("respondedAt", { withTimezone: true }),
+    reviewedBy: bigint("reviewedBy", { mode: "number" }).references(() => users.userId, { onDelete: "set null" }),
+  },
+  (t) => [
+    check("tenant_application_status_check", sql`${t.status} in ('pending','approved','rejected')`),
+    uniqueIndex("one_pending_application_per_user").on(t.userId).where(sql`${t.status} = 'pending'`),
+    index("tenant_application_userId_idx").on(t.userId),
+    index("tenant_application_status_idx").on(t.status, t.requestedAt.desc()),
+  ],
+);
