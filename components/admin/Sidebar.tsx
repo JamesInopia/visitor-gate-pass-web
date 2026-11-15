@@ -6,7 +6,7 @@ const links = [
   { href: "/admin/analytics", label: "Analytics" },
   { href: "/admin/archive", label: "Archive" },
   { href: "/admin/scanner", label: "Scanner" },
-  { href: "/admin/extra", label: "Extra" },
+  { href: "/admin/requests", label: "Requests" },
 ];
 
 export default function Sidebar() {
