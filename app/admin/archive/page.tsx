@@ -1,8 +1,6 @@
 import Link from "next/link";
 import { listArchives } from "@/lib/archive";
 import { TIMEZONE } from "@/lib/dates";
-import { SearchParamsContext } from "next/dist/shared/lib/hooks-client-context.shared-runtime";
-import { tr } from "zod/locales";
 
 type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
 
@@ -41,7 +39,7 @@ export default async function ArchivePage({
     if (to) params.set("to", to);
     if (p > 1) params.set("page", String(p));
     const qs = params.toString();
-    return qs ? `/admin/archives?{qs}` : "/admin/archive";
+    return qs ? `/admin/archive?${qs}` : "/admin/archive";
   };
 
   return (
@@ -106,7 +104,7 @@ export default async function ArchivePage({
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={8} className="p-8 text-center text-gay-500">
+                <td colSpan={8} className="p-8 text-center text-gray-500">
                   No archived visits
                   {q || from || to ? " match these filters" : " yet"}.
                 </td>
@@ -142,7 +140,7 @@ export default async function ArchivePage({
           {page < pages ? (
             <Link href={href(page + 1)}>Next →</Link>
           ) : (
-            <span className="text-gray-400">← Previous</span>
+            <span className="text-gray-400">Next →</span>
           )}
         </nav>
       )}

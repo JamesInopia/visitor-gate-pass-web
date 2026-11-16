@@ -63,8 +63,10 @@ export async function purgeRequest(requestId: number) {
           dateExit: exits.length ? new Date(Math.max(...exits)) : null,
           visitPurpose: row.request.purposeOfVisit,
           authBy: logs[0].adminName,
-          })
-          .onConflictDoNothing({ target: archives.passId });
+          visitorId: row.request.visitorId,
+          passId: row.pass.passId,
+        })
+        .onConflictDoNothing({ target: archives.passId });
       }
     }
 
