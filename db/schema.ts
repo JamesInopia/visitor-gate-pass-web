@@ -1,41 +1,73 @@
 import { sql } from "drizzle-orm";
-import { bigint, check, date, index, pgTable, text, timestamp, unique, uniqueIndex, uuid } from "drizzle-orm/pg-core";
- 
+import {
+  bigint,
+  check,
+  date,
+  index,
+  pgTable,
+  text,
+  timestamp,
+  unique,
+  uniqueIndex,
+  uuid,
+} from "drizzle-orm/pg-core";
+
 export const ROLES = ["visitor", "tenant", "admin"] as const;
 export type Role = (typeof ROLES)[number];
 
 export const users = pgTable(
   "users",
   {
-    userId: bigint("userId", { mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
-    authId: uuid("auth_id").unique(), 
+    userId: bigint("userId", { mode: "number" })
+      .primaryKey()
+      .generatedAlwaysAsIdentity(),
+    authId: uuid("auth_id").unique(),
     name: text("name").notNull(),
     role: text("role", { enum: ROLES }).notNull(),
     email: text("email").unique(),
     contact: text("contact"),
     unitNo: text("unitNo"),
   },
-  (t) => [check("users_role_check", sql`${t.role} in ('tenant','visitor','admin')`)],
+  (t) => [
+    check("users_role_check", sql`${t.role} in ('tenant','visitor','admin')`),
+  ],
 );
 
 export const visitorRequest = pgTable(
   "visitor_request",
   {
-    requestId: bigint("requestId", { mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
-    visitorId: bigint("visitorId", { mode: "number" }).notNull().references(() => users.userId),
-    hostId: bigint("hostId", { mode: "number" }).notNull().references(() => users.userId),
+    requestId: bigint("requestId", { mode: "number" })
+      .primaryKey()
+      .generatedAlwaysAsIdentity(),
+    visitorId: bigint("visitorId", { mode: "number" })
+      .notNull()
+      .references(() => users.userId),
+    hostId: bigint("hostId", { mode: "number" })
+      .notNull()
+      .references(() => users.userId),
     profilePicture: text("profilePicture"),
     visitDuration: timestamp("visitDuration", { withTimezone: true }),
     purposeOfVisit: text("purposeOfVisit"),
     idImageUrl: text("idImageUrl"),
-    status: text("status", { enum: ["pending", "approved", "denied", "cancelled"] }).notNull().default("pending"),
-    requestedAt: timestamp("requestedAt", { withTimezone: true }).notNull().defaultNow(),
+    status: text("status", {
+      enum: ["pending", "approved", "denied", "cancelled"],
+    })
+      .notNull()
+      .default("pending"),
+    requestedAt: timestamp("requestedAt", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
     respondedAt: timestamp("respondedAt", { withTimezone: true }),
     visitDate: date("visitDate", { mode: "string" }),
   },
   (t) => [
-    check("visitor_request_status_check", sql`${t.status} in ('pending','approved','denied','cancelled')`),
-    uniqueIndex("one_approved_per_visitor").on(t.visitorId).where(sql`${t.status} = 'approved'`),
+    check(
+      "visitor_request_status_check",
+      sql`${t.status} in ('pending','approved','denied','cancelled')`,
+    ),
+    uniqueIndex("one_approved_per_visitor")
+      .on(t.visitorId)
+      .where(sql`${t.status} = 'approved'`),
     index("visitor_request_visitorId_idx").on(t.visitorId),
     index("visitor_request_hostId_idx").on(t.hostId),
   ],
@@ -44,28 +76,43 @@ export const visitorRequest = pgTable(
 export const gatePass = pgTable(
   "gate_pass",
   {
-    passId: bigint("passId", { mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
+    passId: bigint("passId", { mode: "number" })
+      .primaryKey()
+      .generatedAlwaysAsIdentity(),
     requestId: bigint("requestId", { mode: "number" })
       .notNull()
       .references(() => visitorRequest.requestId, { onDelete: "cascade" }),
     code: text("code").notNull(),
     expiryDate: timestamp("expiryDate", { withTimezone: true }),
-    issuedAt: timestamp("issuedAt", { withTimezone: true }).notNull().defaultNow(),
-    status: text("status", { enum: ["active", "used", "expired", "revoked"] }).notNull().default("active"),
+    issuedAt: timestamp("issuedAt", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    status: text("status", { enum: ["active", "used", "expired", "revoked"] })
+      .notNull()
+      .default("active"),
   },
   (t) => [
     unique("gate_pass_requestId_key").on(t.requestId),
     unique("gate_pass_code_key").on(t.code),
-    check("gate_pass_status_check", sql`${t.status} in ('active','used','expired','revoked')`),
+    check(
+      "gate_pass_status_check",
+      sql`${t.status} in ('active','used','expired','revoked')`,
+    ),
   ],
 );
 
 export const entryLog = pgTable(
   "entry_log",
   {
-    entryId: bigint("entryId", { mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
-    passId: bigint("passId", { mode: "number" }).notNull().references(() => gatePass.passId, { onDelete: "cascade" }),
-    adminId: bigint("adminId", { mode: "number" }).notNull().references(() => users.userId),
+    entryId: bigint("entryId", { mode: "number" })
+      .primaryKey()
+      .generatedAlwaysAsIdentity(),
+    passId: bigint("passId", { mode: "number" })
+      .notNull()
+      .references(() => gatePass.passId, { onDelete: "cascade" }),
+    adminId: bigint("adminId", { mode: "number" })
+      .notNull()
+      .references(() => users.userId),
     dateEnter: timestamp("dateEnter", { withTimezone: true }),
     dateExit: timestamp("dateExit", { withTimezone: true }),
   },
@@ -73,15 +120,18 @@ export const entryLog = pgTable(
     index("entry_log_passId_idx").on(t.passId),
     index("entry_log_adminId_idx").on(t.adminId),
     index("entry_log_dateenter_idx").on(t.dateEnter.desc()),
-    uniqueIndex("one_open_entry_per_pass").on(t.passId).where(sql`${t.dateExit} is null`),
+    uniqueIndex("one_open_entry_per_pass")
+      .on(t.passId)
+      .where(sql`${t.dateExit} is null`),
   ],
 );
-
 
 export const archives = pgTable(
   "archives",
   {
-    logId: bigint("logId", { mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
+    logId: bigint("logId", { mode: "number" })
+      .primaryKey()
+      .generatedAlwaysAsIdentity(),
     visitorName: text("visitorName"),
     contact: text("contact"),
     unitVisited: text("unitVisited"),
@@ -89,9 +139,15 @@ export const archives = pgTable(
     dateExit: timestamp("dateExit", { withTimezone: true }),
     visitPurpose: text("visitPurpose"),
     authBy: text("authBy"),
-    archivedAt: timestamp("archivedAt", { withTimezone: true }).notNull().defaultNow(),
-    visitorId: bigint("visitorId", { mode: "number" }).references(() => users.userId, { onDelete: "set null" }),
+    archivedAt: timestamp("archivedAt", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    visitorId: bigint("visitorId", { mode: "number" }).references(
+      () => users.userId,
+      { onDelete: "set null" },
+    ),
     passId: bigint("passId", { mode: "number" }),
+    hostName: text("hostName"),
   },
   (t) => [
     uniqueIndex("archives_passid_key").on(t.passId),
@@ -102,12 +158,18 @@ export const archives = pgTable(
 export const notices = pgTable(
   "notices",
   {
-    noticeId: bigint("noticeId", { mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
-    userId: bigint("userId", { mode: "number" }).notNull().references(() => users.userId, { onDelete: "cascade" }),
+    noticeId: bigint("noticeId", { mode: "number" })
+      .primaryKey()
+      .generatedAlwaysAsIdentity(),
+    userId: bigint("userId", { mode: "number" })
+      .notNull()
+      .references(() => users.userId, { onDelete: "cascade" }),
     kind: text("kind", { enum: ["denied"] }).notNull(),
     hostName: text("hostName").notNull(),
     visitDate: date("visitDate", { mode: "string" }),
-    createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("createdAt", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (t) => [
     check("notices_kind_check", sql`${t.kind} = 'denied'`),
@@ -115,28 +177,49 @@ export const notices = pgTable(
   ],
 );
 
-export const TENANT_APPLICATION_STATUSES = ["pending", "approved", "rejected"] as const;
-export type TenantApplicationStatus = (typeof TENANT_APPLICATION_STATUSES)[number];
+export const TENANT_APPLICATION_STATUSES = [
+  "pending",
+  "approved",
+  "rejected",
+] as const;
+export type TenantApplicationStatus =
+  (typeof TENANT_APPLICATION_STATUSES)[number];
 
 // A visitor asking to become a tenant. An admin approves or rejects it.
 // Rows are kept after the decision so the visitor can see the outcome.
 export const tenantApplication = pgTable(
   "tenant_application",
   {
-    applicationId: bigint("applicationId", { mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
-    userId: bigint("userId", { mode: "number" }).notNull().references(() => users.userId, { onDelete: "cascade" }),
+    applicationId: bigint("applicationId", { mode: "number" })
+      .primaryKey()
+      .generatedAlwaysAsIdentity(),
+    userId: bigint("userId", { mode: "number" })
+      .notNull()
+      .references(() => users.userId, { onDelete: "cascade" }),
     fullName: text("fullName").notNull(),
     email: text("email").notNull(),
     unitNo: text("unitNo").notNull(),
-    status: text("status", { enum: TENANT_APPLICATION_STATUSES }).notNull().default("pending"),
+    status: text("status", { enum: TENANT_APPLICATION_STATUSES })
+      .notNull()
+      .default("pending"),
     reviewNote: text("reviewNote"),
-    requestedAt: timestamp("requestedAt", { withTimezone: true }).notNull().defaultNow(),
+    requestedAt: timestamp("requestedAt", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
     respondedAt: timestamp("respondedAt", { withTimezone: true }),
-    reviewedBy: bigint("reviewedBy", { mode: "number" }).references(() => users.userId, { onDelete: "set null" }),
+    reviewedBy: bigint("reviewedBy", { mode: "number" }).references(
+      () => users.userId,
+      { onDelete: "set null" },
+    ),
   },
   (t) => [
-    check("tenant_application_status_check", sql`${t.status} in ('pending','approved','rejected')`),
-    uniqueIndex("one_pending_application_per_user").on(t.userId).where(sql`${t.status} = 'pending'`),
+    check(
+      "tenant_application_status_check",
+      sql`${t.status} in ('pending','approved','rejected')`,
+    ),
+    uniqueIndex("one_pending_application_per_user")
+      .on(t.userId)
+      .where(sql`${t.status} = 'pending'`),
     index("tenant_application_userId_idx").on(t.userId),
     index("tenant_application_status_idx").on(t.status, t.requestedAt.desc()),
   ],

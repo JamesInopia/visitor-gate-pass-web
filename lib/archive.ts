@@ -54,19 +54,24 @@ export async function purgeRequest(requestId: number) {
         .orderBy(asc(entryLog.dateEnter));
 
       if (logs.length > 0) {
-        const exits = logs.flatMap((l) => (l.dateExit ? [l.dateExit.getTime()] : []));
-        await tx.insert(archives).values({
-          visitorName: row.visitor.name,
-          contact: row.visitor.contact,
-          unitVisited: row.host.unitNo,
-          dateEnter: logs[0].dateEnter,
-          dateExit: exits.length ? new Date(Math.max(...exits)) : null,
-          visitPurpose: row.request.purposeOfVisit,
-          authBy: logs[0].adminName,
-          visitorId: row.request.visitorId,
-          passId: row.pass.passId,
-        })
-        .onConflictDoNothing({ target: archives.passId });
+        const exits = logs.flatMap((l) =>
+          l.dateExit ? [l.dateExit.getTime()] : [],
+        );
+        await tx
+          .insert(archives)
+          .values({
+            visitorName: row.visitor.name,
+            contact: row.visitor.contact,
+            unitVisited: row.host.unitNo,
+            dateEnter: logs[0].dateEnter,
+            dateExit: exits.length ? new Date(Math.max(...exits)) : null,
+            visitPurpose: row.request.purposeOfVisit,
+            authBy: logs[0].adminName,
+            visitorId: row.request.visitorId,
+            passId: row.pass.passId,
+            hostName: row.host.name,
+          })
+          .onConflictDoNothing({ target: archives.passId });
       }
     }
 

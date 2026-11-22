@@ -44,53 +44,55 @@ export default async function ArchivePage({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-end justify-between">
-        <h1 className="text-2xl font-bold">Archive</h1>
-        <span className="text-sm text-gray-600">
-          {total} record{total === 1 ? "" : "s"}
-        </span>
-      </div>
+      <div className="flex justify-between">
+        <div className="flex items-end justify-between">
+          <h1 className="text-2xl font-bold">Archive</h1>
+          {/* <span className="text-sm text-gray-600">
+            {total} record{total === 1 ? "" : "s"}
+          </span> */}
+        </div>
 
-      <form method="get" className="flex flex-wrap items-end gap-3">
-        <label className="flex flex-col text-sm">
-          Search
-          <input
-            name="q"
-            defaultValue={q}
-            placeholder="Visitor, unit, purpose, guard"
-            className="w-72 rounded border px-2 py-1 bg-white"
-          />
-        </label>
-        <label className="flex flex-col text-sm">
-          From
-          <input
-            type="date"
-            name="from"
-            defaultValue={from}
-            className="rounded border px-2 py-1 bg-white"
-          />
-        </label>
-        <label className="flex flex-col text-sm">
-          To
-          <input
-            type="date"
-            name="to"
-            defaultValue={to}
-            className="rounded border px-2 py-1 bg-white"
-          />
-        </label>
-        <button className="rounded bg-blue-300 px-4 py-1.5">Filter</button>
-        {(q || from || to) && (
-          <Link href="/admin/archive" className="py-1.5 text-sm underline">
-            Clear
-          </Link>
-        )}
-      </form>
+        <form method="get" className="flex flex-wrap items-end gap-3">
+          <label className="flex flex-col text-sm">
+            Search
+            <input
+              name="q"
+              defaultValue={q}
+              placeholder="Visitor, unit, purpose, guard"
+              className="w-72 rounded border px-2 py-1 bg-white"
+            />
+          </label>
+          <label className="flex flex-col text-sm">
+            From
+            <input
+              type="date"
+              name="from"
+              defaultValue={from}
+              className="rounded border px-2 py-1 bg-white"
+            />
+          </label>
+          <label className="flex flex-col text-sm">
+            To
+            <input
+              type="date"
+              name="to"
+              defaultValue={to}
+              className="rounded border px-2 py-1 bg-white"
+            />
+          </label>
+          <button className="rounded bg-blue-300 px-4 py-1.5">Filter</button>
+          {(q || from || to) && (
+            <Link href="/admin/archive" className="py-1.5 text-sm underline">
+              Clear
+            </Link>
+          )}
+        </form>
+      </div>
 
       <div className="overflow-x-auto">
         <table className="w-full border-collapse text-center text-sm">
           <thead>
-            <tr className="border-b bg-gray-100">
+            <tr className="border-b bg-gray-300">
               <th className="p-2">Visitor</th>
               <th className="p-2">Contact</th>
               <th className="p-2">Unit</th>
