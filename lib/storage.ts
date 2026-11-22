@@ -39,3 +39,9 @@ export async function removeIdImage(path: string | null | undefined) {
   if (!path) return;
   await createAdminClient().storage.from(BUCKET).remove([path]).catch((e) => console.error("removeIdImage", e));
 }
+
+export async function downloadIdImage(path: string): Promise<{ body: ArrayBuffer; type: string } | null> {
+  const { data, error } = await createAdminClient().storage.from(BUCKET).download(path);
+  if (error || !data) return null;
+  return { body: await data.arrayBuffer(), type: data.type || "application/octet-stream" };
+}

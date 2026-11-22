@@ -4,7 +4,8 @@ import { alias } from "drizzle-orm/pg-core";
 import { db } from "@/db";
 import { archives, entryLog, gatePass, users, visitorRequest } from "@/db/schema";
 import type { Profile } from "@/lib/auth";
-import { expiresAtOf } from "@/lib/gatepasses";
+import { expiresAtOf, type Pass } from "@/lib/gatepasses";
+import { downloadIdImage } from "@/lib/storage";
 
 const visitor = alias(users, "visitor");
 const host = alias(users, "host");
@@ -26,6 +27,16 @@ export type ScanResult =
   | ({ ok: false; reason: Exclude<DenyReason, "invalid"> } & PassInfo)
   | { ok: false; reason: "invalid" };
 
+type Denied = Extract<ScanResult, { ok: false }>;
+
+// What the gate screen needs before anything is recorded.
+export type ScanPreview =
+  | ({ ok: true; action: "enter" | "exit"; firstEntry: boolean; idImageUrl: string | null } & PassInfo)
+  | Denied;
+
+// "needs_review": a first entry was sent without the admin's confirmation.
+export type ScanOutcome = ScanResult | { ok: false; reason: "needs_review" };
+
 const pgCode = (e: unknown) => {
   const x = e as { code?: string; cause?: { code?: string } };
   return x.code ?? x.cause?.code;
@@ -37,7 +48,14 @@ function normalizeCode(raw: string) {
   return c.length === 8 ? `${c.slice(0, 4)}-${c.slice(4)}` : raw.trim().toUpperCase();
 }
 
-export async function scanPass(admin: Profile, rawCode: string): Promise<ScanResult> {
+type Found = {
+  pass: Pass;
+  request: typeof visitorRequest.$inferSelect;
+  info: PassInfo;
+};
+
+// Finds the pass and checks it is valid right now. Records nothing.
+async function lookupPass(rawCode: string): Promise<{ denied: Denied; found?: undefined } | { denied?: undefined; found: Found }> {
   const code = normalizeCode(rawCode);
   const [row] = await db
     .select({ pass: gatePass, request: visitorRequest, visitor, host })
@@ -46,7 +64,7 @@ export async function scanPass(admin: Profile, rawCode: string): Promise<ScanRes
     .innerJoin(visitor, eq(visitor.userId, visitorRequest.visitorId))
     .innerJoin(host, eq(host.userId, visitorRequest.hostId))
     .where(eq(gatePass.code, code));
-  if (!row) return { ok: false, reason: "invalid" };
+  if (!row) return { denied: { ok: false, reason: "invalid" } };
 
   const { pass, request } = row;
   const startsAt = pass.issuedAt;
@@ -62,20 +80,63 @@ export async function scanPass(admin: Profile, rawCode: string): Promise<ScanRes
   };
 
   const now = new Date();
-  if (pass.status === "revoked" || request.status !== "approved") return { ok: false, reason: "revoked", ...info };
-  if (pass.status === "expired" || now >= expiresAt) return { ok: false, reason: "expired", ...info };
-  if (now < startsAt) return { ok: false, reason: "not_yet", ...info };
+  if (pass.status === "revoked" || request.status !== "approved") return { denied: { ok: false, reason: "revoked", ...info } };
+  if (pass.status === "expired" || now >= expiresAt) return { denied: { ok: false, reason: "expired", ...info } };
+  if (now < startsAt) return { denied: { ok: false, reason: "not_yet", ...info } };
+  return { found: { pass, request, info } };
+}
 
+// Looks the pass up and says whether this would be the visitor's first entry.
+// Records nothing. The ID image is only offered on a first entry.
+export async function previewPass(rawCode: string): Promise<ScanPreview> {
+  const looked = await lookupPass(rawCode);
+  if (looked.denied) return looked.denied;
+  const found = looked.found;
+
+  const entries = await db.select({ dateExit: entryLog.dateExit }).from(entryLog).where(eq(entryLog.passId, found.pass.passId));
+  const firstEntry = entries.length === 0;
+  return {
+    ok: true,
+    action: entries.some((e) => e.dateExit === null) ? "exit" : "enter",
+    firstEntry,
+    idImageUrl:
+      firstEntry && found.request.idImageUrl
+        ? `/api/scan/id-image?code=${encodeURIComponent(found.pass.code)}`
+        : null,
+    ...found.info,
+  };
+}
+
+// The ID photo the visitor submitted with this pass's request, for the admin's review.
+export async function readPassIdImage(rawCode: string) {
+  const [row] = await db
+    .select({ path: visitorRequest.idImageUrl })
+    .from(gatePass)
+    .innerJoin(visitorRequest, eq(visitorRequest.requestId, gatePass.requestId))
+    .where(eq(gatePass.code, normalizeCode(rawCode)));
+  return row?.path ? downloadIdImage(row.path) : null;
+}
+
+// `confirmed` means the admin looked at the ID and let the visitor in. A first entry is only
+// recorded when it is set; after that, scans record exits and re-entries on their own.
+export async function scanPass(admin: Profile, rawCode: string, confirmed = false): Promise<ScanOutcome> {
+  const looked = await lookupPass(rawCode);
+  if (looked.denied) return looked.denied;
+  const { pass, info } = looked.found;
+
+  const now = new Date();
   // First scan opens an entry, the next one closes it, and so on.
   // one_open_entry_per_pass makes a racing double-scan fail with 23505, so retry once.
   for (let attempt = 0; ; attempt++) {
     try {
       const action = await db.transaction(async (tx) => {
-        const [open] = await tx
-          .select({ entryId: entryLog.entryId })
+        const entries = await tx
+          .select({ entryId: entryLog.entryId, dateExit: entryLog.dateExit })
           .from(entryLog)
-          .where(and(eq(entryLog.passId, pass.passId), isNull(entryLog.dateExit)))
-          .limit(1);
+          .where(eq(entryLog.passId, pass.passId));
+        if (entries.length === 0 && !confirmed) return "needs_review" as const;
+
+        const open = entries.find((e) => e.dateExit === null);
         if (open) {
           await tx
             .update(entryLog)
@@ -86,6 +147,7 @@ export async function scanPass(admin: Profile, rawCode: string): Promise<ScanRes
         await tx.insert(entryLog).values({ passId: pass.passId, adminId: admin.userId, dateEnter: now });
         return "enter" as const;
       });
+      if (action === "needs_review") return { ok: false, reason: "needs_review" };
       return { ok: true, action, at: now.toISOString(), ...info };
     } catch (e) {
       if (attempt >= 1 || pgCode(e) !== "23505") throw e;
