@@ -35,7 +35,7 @@ export default function FilterPopover({
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        className={`flex items-center gap-2 rounded-full border bg-white px-4 py-1.5 text-sm hover:bg-gray-50 ${
+        className={`flex items-center gap-2 rounded-full border bg-white px-4 py-1.5 text-sm hover:bg-gray-20   0 hover:cursor-pointer ${
           active
             ? "border-blue-800 text-blue-800"
             : "border-gray-300 text-gray-500"
@@ -50,9 +50,10 @@ export default function FilterPopover({
           stroke="currentColor"
           strokeWidth="1.5"
         >
-          <path d="M2 3h12L9.5 8.5V13l-3-1.5V8.5L2 3z" />
+          <rect x="2" y="3" width="12" height="11" rx="1.5" />
+          <path d="M2 6.5h12M5 1.5v3M11 1.5v3" strokeLinecap="round" />
         </svg>
-        {active && <span className="size-1.5 rounded-full bg-blue-800   " />}
+        {active && <span className="size-1.5 rounded-full bg-blue-800" />}
       </button>
 
       <div
@@ -66,7 +67,7 @@ export default function FilterPopover({
             defaultValue={from}
             key={from}
             autoComplete="off"
-            className="rounded border px-2 py-1"
+            className="rounded border px-2 py-1 hover:cursor-text [&::-webkit-calendar-picker-indicator]:cursor-pointer"
           />
         </label>
         <label className="mb-2 flex flex-col gap-1">
@@ -77,7 +78,7 @@ export default function FilterPopover({
             defaultValue={to}
             key={to}
             autoComplete="off"
-            className="rounded border px-2 py-1"
+            className="rounded border px-2 py-1 hover:cursor-text [&::-webkit-calendar-picker-indicator]:cursor-pointer"
           />
         </label>
         <div className="flex items-center justify-between">
@@ -87,14 +88,14 @@ export default function FilterPopover({
           {active ? (
             <Link
               href="/admin/archive"
-              className="rounded px-4 py-1 bg-red-500 text-white hover:bg-red-600"
+              className="rounded px-4 py-1 mt-2 bg-red-500 text-white hover:bg-red-600"
             >
               Clear
             </Link>
           ) : (
             <span
-              haria-disabled="true"
-              className="cursor-not-allowed rounded bg-gray-300 px-4 py-1 text-gray-500 select-none"
+              aria-disabled="true"
+              className="cursor-not-allowed rounded bg-gray-300 px-4 py-1 mt-2 text-gray-500 select-none"
             >
               Clear
             </span>
