@@ -1,4 +1,5 @@
-import { logOut } from "@/app/login/actions";
+import NavLinks from "./NavLinks";
+import ProfileMenu from "./ProfileMenu";
 
 export default function Header({
   name,
@@ -8,16 +9,9 @@ export default function Header({
   avatarUrl?: string;
 }) {
   return (
-    <header className="flex h-18 items-center justify-end gap-3 px-6">
-      <form action={logOut}>
-        <button className="text-sm underline">Log out</button>
-      </form>
-      <span>{name}</span>
-      <div className="size-11 overflow-hidden rounded-full bg-gray-300">
-        {avatarUrl && (
-          <img src={avatarUrl} alt="" className="size-full object-cover" />
-        )}
-      </div>
+    <header className="flex h-18 shrink-0 items-center justify-between gap-6 border-b bg-white px-6">
+      <NavLinks />
+      <ProfileMenu name={name} avatarUrl={avatarUrl} />
     </header>
   );
 }

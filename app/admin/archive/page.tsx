@@ -1,18 +1,48 @@
 import Link from "next/link";
-import { listArchives } from "@/lib/archive";
+import { listArchives, isSortKey, type SortKey } from "@/lib/archive";
 import { TIMEZONE } from "@/lib/dates";
+import FilterPopover from "@/components/admin/FilterPopover";
 
 type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
 
 const one = (v: string | string[] | undefined) =>
   (Array.isArray(v) ? v[0] : v) ?? "";
 
-const stamp = new Intl.DateTimeFormat("en-PH", {
+const COLUMNS: { label: string; key: SortKey }[] = [
+  { label: "Visitor", key: "visitor" },
+  { label: "Contact", key: "contact" },
+  { label: "Unit", key: "unit" },
+  { label: "Time-In", key: "timeIn" },
+  { label: "Time-Out", key: "timeOut" },
+  { label: "Purpose", key: "purpose" },
+  { label: "Authorized By", key: "authBy" },
+  { label: "Tenant Visited", key: "tenant" },
+  { label: "Archived At", key: "archived" },
+];
+
+const dateFmt = new Intl.DateTimeFormat("en-GB", {
   timeZone: TIMEZONE,
-  dateStyle: "medium",
-  timeStyle: "short",
+  day: "2-digit",
+  month: "short",
+  year: "numeric",
 });
-const fmt = (d: Date | null) => (d ? stamp.format(d) : "—");
+const timeFmt = new Intl.DateTimeFormat("en-GB", {
+  timeZone: TIMEZONE,
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: true,
+});
+const dateTwoLine = (d: Date | null) =>
+  d ? (
+    <>
+      {dateFmt.format(d)}
+      <div className="text-xs text-gray-500">
+        {timeFmt.format(d).toUpperCase()}
+      </div>
+    </>
+  ) : (
+    "-"
+  );
 
 export default async function ArchivePage({
   searchParams,
@@ -24,102 +54,129 @@ export default async function ArchivePage({
   const from = one(sp.from);
   const to = one(sp.to);
   const requested = Math.max(1, parseInt(one(sp.page), 10) || 1);
+  const sortParam = one(sp.sort);
+  const sort: SortKey = isSortKey(sortParam) ? sortParam : "archived";
+  const dir = one(sp.dir) === "asc" ? "asc" : "desc";
 
-  const { rows, total, page, pages } = await listArchives({
+  const { rows, page, pages } = await listArchives({
     q,
     from,
     to,
+    sort,
+    dir,
     page: requested,
   });
 
-  const href = (p: number) => {
+  const build = (o: {
+    page?: number;
+    sort?: SortKey;
+    dir?: "asc" | "desc";
+  }) => {
     const params = new URLSearchParams();
     if (q) params.set("q", q);
     if (from) params.set("from", from);
     if (to) params.set("to", to);
-    if (p > 1) params.set("page", String(p));
+    const s = o.sort ?? sort;
+    const d = o.dir ?? dir;
+    if (s !== "archived" || d !== "desc") {
+      params.set("sort", s);
+      params.set("dir", d);
+    }
+    if (o.page && o.page > 1) params.set("page", String(o.page));
     const qs = params.toString();
     return qs ? `/admin/archive?${qs}` : "/admin/archive";
   };
+  const href = (p: number) => build({ page: p });
+
+  const filtered = Boolean(q || from || to);
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-end justify-between">
-        <h1 className="text-2xl font-bold">Archive</h1>
-        <span className="text-sm text-gray-600">
-          {total} record{total === 1 ? "" : "s"}
-        </span>
-      </div>
-
-      <form method="get" className="flex flex-wrap items-end gap-3">
-        <label className="flex flex-col text-sm">
-          Search
+    <div className="flex flex-1 flex-col gap-4">
+      <form method="get" className="flex items-center justify-end gap-4">
+        <input type="hidden" name="sort" value={sort} />
+        <input type="hidden" name="dir" value={dir} />
+        <FilterPopover from={from} to={to} />
+        <div className="relative">
+          <svg
+            viewBox="0 0 16 16"
+            aria-hidden
+            className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-gray-400"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+          >
+            <circle cx="7" cy="7" r="4.5" />
+            <path d="M10.5 10.5L14 14" />
+          </svg>
           <input
             name="q"
             defaultValue={q}
-            placeholder="Visitor, unit, purpose, guard"
-            className="w-72 rounded border px-2 py-1 bg-white"
+            autoComplete="off"
+            placeholder="Search visitor, unit, tenant..."
+            className="w-72 rounded border py-1 pr-2 pl-9 bg-white text-sm"
           />
-        </label>
-        <label className="flex flex-col text-sm">
-          From
-          <input
-            type="date"
-            name="from"
-            defaultValue={from}
-            className="rounded border px-2 py-1 bg-white"
-          />
-        </label>
-        <label className="flex flex-col text-sm">
-          To
-          <input
-            type="date"
-            name="to"
-            defaultValue={to}
-            className="rounded border px-2 py-1 bg-white"
-          />
-        </label>
-        <button className="rounded bg-blue-300 px-4 py-1.5">Filter</button>
-        {(q || from || to) && (
-          <Link href="/admin/archive" className="py-1.5 text-sm underline">
-            Clear
-          </Link>
-        )}
+        </div>
       </form>
 
-      <div className="overflow-x-auto">
+      <div className="flex-1 overflow-x-auto bg-gray-300">
         <table className="w-full border-collapse text-center text-sm">
           <thead>
-            <tr className="border-b bg-gray-100">
-              <th className="p-2">Visitor</th>
-              <th className="p-2">Contact</th>
-              <th className="p-2">Unit</th>
-              <th className="p-2">Entered</th>
-              <th className="p-2">Exited</th>
-              <th className="p-2">Purpose</th>
-              <th className="p-2">Authorized By</th>
-              <th className="p-2">Archived</th>
+            <tr className="bg-gray-300">
+              {COLUMNS.map((c) => {
+                const active = sort === c.key;
+                const nextDir = active && dir === "asc" ? "desc" : "asc";
+                return (
+                  <th key={c.key} className="p-0 font-semibold">
+                    <Link
+                      href={build({
+                        sort: c.key,
+                        dir: nextDir,
+                      })}
+                      title={`Sort by ${c.label}`}
+                      className={`flex items-center justify-center gap-1 px-3 py-1.5 text-lg border-b-2 hover:bg-gray-200 ${
+                        active ? "text-blue-800" : ""
+                      }`}
+                    >
+                      {c.label}
+                      <span
+                        aria-hidden
+                        className={`text-sm ${active ? "" : "text-gray-600"}`}
+                      >
+                        {active ? (dir === "asc" ? "↑" : "↓") : "↕"}
+                      </span>
+                    </Link>
+                  </th>
+                );
+              })}
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 ? (
-              <tr>
-                <td colSpan={8} className="p-8 text-center text-gray-500">
-                  No archived visits
-                  {q || from || to ? " match these filters" : " yet"}.
+              <tr className="bg-white">
+                <td colSpan={COLUMNS.length} className="p-8 text-gray-500">
+                  No archived visits{filtered ? " match these filters" : " yet"}
+                  .
                 </td>
               </tr>
             ) : (
               rows.map((r) => (
-                <tr key={r.logId} className="border-b">
-                  <td className="p-2">{r.visitorName ?? "—"}</td>
-                  <td className="p-2">{r.contact ?? "—"}</td>
-                  <td className="p-2">{r.unitVisited ?? "—"}</td>
-                  <td className="p-2 whitespace-nowrap">{fmt(r.dateEnter)}</td>
-                  <td className="p-2 whitespace-nowrap">{fmt(r.dateExit)}</td>
-                  <td className="p-2">{r.visitPurpose ?? "—"}</td>
-                  <td className="p-2">{r.authBy ?? "—"}</td>
-                  <td className="p-2 whitespace-nowrap">{fmt(r.archivedAt)}</td>
+                <tr key={r.logId} className="odd:bg-white even:bg-gray-100">
+                  <td className="px-3 py-1.5">{r.visitorName ?? "—"}</td>
+                  <td className="px-3 py-1.5">{r.contact ?? "—"}</td>
+                  <td className="px-3 py-1.5">{r.unitVisited ?? "—"}</td>
+                  <td className="px-3 py-1.5 whitespace-nowrap">
+                    {dateTwoLine(r.dateEnter)}
+                  </td>
+                  <td className="px-3 py-1.5 whitespace-nowrap">
+                    {dateTwoLine(r.dateExit)}
+                  </td>
+                  <td className="px-3 py-1.5">{r.visitPurpose ?? "—"}</td>
+                  <td className="px-3 py-1.5">{r.authBy ?? "—"}</td>
+                  <td className="px-3 py-1.5">{r.hostName ?? "—"}</td>
+                  <td className="px-3 py-1.5 whitespace-nowrap">
+                    {dateTwoLine(r.archivedAt)}
+                  </td>
                 </tr>
               ))
             )}
