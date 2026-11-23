@@ -26,7 +26,7 @@ export default function LineChart({ items }: { items: LinePoint[] }) {
 
   return (
     <div className="relative min-h-72 flex-1">
-      <div className="absolute inset-x-0 top-0 bottom-8 flex items-end gap-2 border-b pt-6">
+      <div className="absolute inset-x-0 top-0 bottom-8 border-b pt-6">
         <div className="relative h-full">
           <svg
             viewBox="0 0 100 100"
@@ -58,6 +58,7 @@ export default function LineChart({ items }: { items: LinePoint[] }) {
                       className={`absolute left-1/2 size-3 -translate-x-1/2 translate-y-1/2 rounded-full border-2 border-blue-800 ${
                         it.partial ? "bg-white" : "bg-blue-800"
                       }`}
+                      style={{ bottom: `${pct(it.value)}%` }}
                     />
                     <span
                       className="absolute inset-x-0 mb-2 text-center text-xs font-medium"
@@ -72,7 +73,7 @@ export default function LineChart({ items }: { items: LinePoint[] }) {
           </div>
         </div>
       </div>
-      <div className="absolute inset-x-0 bottom-0 flex h-6 gap-2">
+      <div className="absolute inset-x-0 bottom-0 flex h-6">
         {items.map((it) => (
           <span
             key={it.start}

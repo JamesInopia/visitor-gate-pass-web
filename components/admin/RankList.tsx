@@ -12,7 +12,7 @@ export default function RankList({ items }: { items: RankItem[] }) {
     <ol className="flex flex-col gap-3">
       {items.map((it, i) => (
         <li key={it.key} className="flex items-center gap-4">
-          <span className="w-5 text-right text-sm fomt-semibold text-gray-500">
+          <span className="w-5 text-right text-sm font-semibold text-gray-500">
             {i + 1}
           </span>
           <div className="w-48 shrink-0">

@@ -63,7 +63,7 @@ export default function AnalyticsControls({
         <select
           key={frequency}
           defaultValue={frequency}
-          onChange={(e) => go(e.target.value as View, frequency)}
+          onChange={(e) => go(view, e.target.value as Frequency)}
           className={select}
         >
           {(Object.keys(FREQS) as Frequency[]).map((f) => (
