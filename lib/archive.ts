@@ -104,19 +104,45 @@ export async function sweepExpired(): Promise<number> {
 
 export const ARCHIVE_PAGE_SIZE = 20;
 
+export const SORTS = {
+  visitor: archives.visitorName,
+  contact: archives.contact,
+  unit: archives.unitVisited,
+  timeIn: archives.dateEnter,
+  timeOut: archives.dateExit,
+  purpose: archives.visitPurpose,
+  authBy: archives.authBy,
+  tenant: archives.hostName,
+  archived: archives.archivedAt,
+} as const;
+
+export type SortKey = keyof typeof SORTS;
+
+export const isSortKey = (s: string): s is SortKey =>
+  Object.prototype.hasOwnProperty.call(SORTS, s);
+
 export type ArchiveQuery = {
   q?: string;
   from?: string;
   to?: string;
+  sort?: SortKey;
+  dir?: "asc" | "desc";
   page?: number;
 };
 
 const DATE_KEY = /^\d{4}-\d{2}-\d{2}$/;
 const escapeLike = (s: string) => s.replace(/[\\%_]/g, "\\$&");
 
-export async function listArchives({ q, from, to, page = 1 }: ArchiveQuery) {
+export async function listArchives({
+  q,
+  from,
+  to,
+  sort = "archived",
+  dir = "desc",
+  page = 1,
+}: ArchiveQuery) {
   const term = q?.trim();
-  const dayOf = sql`(${archives.dateEnter} at time zone ${TIMEZONE})::date`;
+  const dayOf = sql`(${archives.archivedAt} at time zone ${TIMEZONE})::date`;
 
   const filters: (SQL | undefined)[] = [
     term
@@ -125,6 +151,7 @@ export async function listArchives({ q, from, to, page = 1 }: ArchiveQuery) {
           ilike(archives.unitVisited, `%${escapeLike(term)}%`),
           ilike(archives.authBy, `%${escapeLike(term)}%`),
           ilike(archives.visitPurpose, `%${escapeLike(term)}%`),
+          ilike(archives.hostName, `%${escapeLike(term)}%`),
         )
       : undefined,
     from && DATE_KEY.test(from) ? sql`${dayOf} >= ${from}::date` : undefined,
@@ -139,13 +166,16 @@ export async function listArchives({ q, from, to, page = 1 }: ArchiveQuery) {
   const pages = Math.max(1, Math.ceil(total / ARCHIVE_PAGE_SIZE));
   const current = Math.min(Math.max(1, page), pages);
 
+  const col = SORTS[sort];
+  const order =
+    dir === "asc" ? sql`${col} asc nulls last` : sql`${col} desc nulls last`;
   const rows = await db
     .select()
     .from(archives)
     .where(where)
-    .orderBy(desc(archives.dateEnter), desc(archives.logId))
+    .orderBy(order, desc(archives.logId))
     .limit(ARCHIVE_PAGE_SIZE)
-    .offset(current * 1 * ARCHIVE_PAGE_SIZE);
+    .offset((current - 1) * ARCHIVE_PAGE_SIZE);
 
   return { rows, total, page: current, pages };
 }
